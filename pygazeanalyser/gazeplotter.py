@@ -224,7 +224,7 @@ def draw_heatmap(fixations, dispsize, imagefile=None, durationweight=True, alpha
 				pass
 		else:				
 			# add Gaussian to the current heatmap
-			heatmap[y:y+gwh,x:x+gwh] += gaus * fix['dur'][i]
+			heatmap[int(round(y)):int(round(y+gwh)),int(round(x)):int(round(x+gwh))] += gaus * fix['dur'][i]
 	# resize heatmap
 	heatmap = heatmap[strt:dispsize[1]+strt,strt:dispsize[0]+strt]
 	# remove zeros
