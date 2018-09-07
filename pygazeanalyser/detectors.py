@@ -156,11 +156,11 @@ def fixation_detection(x, y, time, missing=0.0, maxdist=25, mindur=50):
 	
 	return Sfix, Efix
 
-
-def saccade_detection(x, y, time, missing=0.0, minlen=5, maxvel=40, maxacc=340):
+def saccade_detection(x, y, time, missing=0.0, minlen=5, maxlen=-1, maxvel=40, maxacc=340):
 	
 	"""Detects saccades, defined as consecutive samples with an inter-sample
-	velocity of over a velocity threshold or an acceleration threshold
+	velocity of over a velocity threshold or an acceleration threshold.
+	NB: since we compute acceleration, a saccade is at least two samples long
 	
 	arguments
 
@@ -174,6 +174,8 @@ def saccade_detection(x, y, time, missing=0.0, minlen=5, maxvel=40, maxacc=340):
 	minlen	-	minimal length of saccades in milliseconds; all detected
 				saccades with len(sac) < minlen will be ignored
 				(default = 5)
+	maxlen	-	if positive, maximal length of saccades in milliseconds (limit inclusive)
+				Will split long saccades into smaller ones (default = -1)
 	maxvel	-	velocity threshold in pixels/second (default = 40)
 	maxacc	-	acceleration threshold in pixels / second**2
 				(default = 340)
@@ -228,15 +230,23 @@ def saccade_detection(x, y, time, missing=0.0, minlen=5, maxvel=40, maxacc=340):
 			# detect saccade endings
 			sacends = numpy.where((vel[1+t1i:] < maxvel).astype(int) + (acc[t1i:] < maxacc).astype(int) == 2)[0]
 			if len(sacends) > 0:
-				# timestamp for ending position
+				# range of current saccade
 				t2i = sacends[0] + 1 + t1i + 2
 				if t2i >= len(time):
 					t2i = len(time)-1
-				t2 = time[t2i]
-				dur = t2 - t1
-
-				# ignore saccades that did not last long enough
-				if dur >= minlen:
+				# corresponding durations
+				durs = time[2+t1i:t2i+1] - t1
+				# check if durations are long enough and if option set, if short enough
+				if maxlen > 0:
+					sacends_within = numpy.where(numpy.all([durs >= minlen, durs <= maxlen], axis=0))[0]
+				else:
+					sacends_within = numpy.where(durs >= minlen)[0]
+				# ignore saccades that do not comply with required durations
+				if len(sacends_within) > 0:
+					# maxlen might be used to update end pos
+					t2i = sacends_within[-1] + t1i + 2
+					t2 = time[t2i]
+					dur = t2 - t1
 					# add to saccade ends
 					Esac.append([t1, t2, dur, x[t1i], y[t1i], x[t2i], y[t2i]])
 				else:
