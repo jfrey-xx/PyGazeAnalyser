@@ -228,8 +228,9 @@ def draw_heatmap(fixations, dispsize, imagefile=None, durationweight=True, alpha
 	# resize heatmap
 	heatmap = heatmap[strt:dispsize[1]+strt,strt:dispsize[0]+strt]
 	# remove zeros
-	lowbound = numpy.mean(heatmap[heatmap>0])
-	heatmap[heatmap<lowbound] = numpy.NaN
+	if len(heatmap[heatmap>0]) > 0:
+		lowbound = numpy.mean(heatmap[heatmap>0])
+		heatmap[heatmap<lowbound] = numpy.NaN
 	# draw heatmap on top of image
 	ax.imshow(heatmap, cmap='jet', alpha=alpha)
 
